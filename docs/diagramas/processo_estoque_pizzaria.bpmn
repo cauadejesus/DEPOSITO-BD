@@ -1,0 +1,545 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_ControleEstoquePizzaria" targetNamespace="https://ceub.br/projetos/controle-estoque-pizzaria/bpmn" exporter="OpenAI BPMN XML Generator" exporterVersion="1.0">
+  <bpmn:collaboration id="Collaboration_Estoque">
+    <bpmn:participant id="Participant_Deposito" name="Gestão e Operação de Estoque - Depósito da Pizzaria" processRef="Process_Estoque"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Estoque" name="Gestão e Operação de Estoque - Depósito da Pizzaria" processType="None" isClosed="false" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_Estoque">
+      <bpmn:lane id="Lane_Estoquista" name="Estoquista / Operador de Depósito">
+        <bpmn:flowNodeRef>Start_Operacao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_TipoOperacao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_A_Conferir</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_B_SolicitarRetirada</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_C_LerTemperatura</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_D_SolicitarEstorno</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Sistema" name="Sistema de Gestão de Estoque (PostgreSQL)">
+        <bpmn:flowNodeRef>Task_A_ValidarFuncionarioValidade</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_A_ValidarArmazenamento</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_A_DadosCapacidadeValidos</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_A_BloquearNotificar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_A_Excecao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_A_RegistrarEntrada</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_A_Sucesso</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_B_SelecionarLotes</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_B_SaldoSuficiente</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_B_BloquearInsuficiencia</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_B_Insuficiente</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_B_AbaterConfirmar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_B_ConsultarReposicao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_B_AbaixoReposicao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_B_Normal</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_C_RegistrarTemperatura</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_C_Anomalia</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_C_ManterNormal</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_C_ManterNormal</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_C_BloquearLoteInterditarLocal</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_C_RegistrarPerda</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_C_ConsultarReposicao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_C_AbaixoReposicao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_C_NormalReposicao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_D_ValidarEstorno</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_D_EstornoPermitido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_D_RecusarEstorno</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_D_Recusado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_D_ExecutarEstorno</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_D_ConsultarReposicao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_D_AbaixoReposicao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_D_NormalReposicao</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Gerencia" name="Gerente / Compras">
+        <bpmn:flowNodeRef>Task_B_EmitirPedido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_B_Pedido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_C_EmitirPedido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_C_Pedido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_D_AutorizarEstorno</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_D_EmitirPedido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_D_Pedido</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_Operacao" name="Chegada de mercadoria do fornecedor ou necessidade de consumo da pizzaria"/>
+    <bpmn:exclusiveGateway id="Gateway_TipoOperacao" name="Tipo de operação?" gatewayDirection="Diverging"/>
+    <bpmn:userTask id="Task_A_Conferir" name="Conferir nota fiscal, lote, data de fabrico e validade"/>
+    <bpmn:serviceTask id="Task_A_ValidarFuncionarioValidade" name="Validar funcionário ativo e validade do lote">
+      <bpmn:documentation>Executar as validações associadas a trg_mov_funcionario_ativo e trg_lote_validade. A entrada deve ser rejeitada quando o funcionário não estiver ativo ou quando um produto que controla validade não apresentar data de validade.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_A_ValidarArmazenamento" name="Validar compatibilidade, temperatura e capacidade em kg">
+      <bpmn:documentation>Executar trg_estoque_compatibilidade_capacidade para validar compatibilidade entre classe de armazenamento e tipo de local, faixa térmica e capacidade disponível em kg. A operação deve respeitar os bloqueios transacionais e locks definidos no banco.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_A_DadosCapacidadeValidos" name="Dados e capacidade válidos?" gatewayDirection="Diverging"/>
+    <bpmn:serviceTask id="Task_A_BloquearNotificar" name="Bloquear entrada e notificar erro ao Estoquista">
+      <bpmn:documentation>Não registar o lote nem incrementar o saldo quando qualquer validação crítica falhar.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_A_Excecao" name="Fim — entrada rejeitada"/>
+    <bpmn:serviceTask id="Task_A_RegistrarEntrada" name="Executar sp_registrar_entrada e confirmar ENTRADA">
+      <bpmn:documentation>Registar lote, actualizar saldo em estoque, registar os itens da movimentação e confirmar a movimentação do tipo ENTRADA.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_A_Sucesso" name="Fim — entrada registada"/>
+    <bpmn:userTask id="Task_B_SolicitarRetirada" name="Solicitar retirada de insumo por produto e quantidade"/>
+    <bpmn:serviceTask id="Task_B_SelecionarLotes" name="sp_retirar_estoque: seleccionar lotes elegíveis e bloquear com FOR UPDATE">
+      <bpmn:documentation>Considerar apenas lotes LIBERADO, com data_validade &gt;= CURRENT_DATE quando aplicável, e local de armazenamento ATIVO. Ordenar por PVPS (menor validade primeiro) ou PEPS (recebimento mais antigo), conforme a política definida, e bloquear as linhas elegíveis com FOR UPDATE. Nota de conformidade: confirmar no DDL que a alternância PEPS configurável está implementada; este processo representa o requisito PVPS/PEPS solicitado.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_B_SaldoSuficiente" name="Saldo disponível suficiente?" gatewayDirection="Diverging"/>
+    <bpmn:serviceTask id="Task_B_BloquearInsuficiencia" name="Bloquear consumo e alertar falta de stock">
+      <bpmn:documentation>Não confirmar a movimentação nem permitir que o saldo fique negativo.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_B_Insuficiente" name="Fim — stock insuficiente"/>
+    <bpmn:serviceTask id="Task_B_AbaterConfirmar" name="Abater saldos por lote, registar itens e confirmar CONSUMO">
+      <bpmn:documentation>Debitar os lotes seleccionados, registar os itens da movimentação e confirmar a movimentação do tipo CONSUMO. A operação deve preservar a integridade do saldo sob concorrência.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_B_ConsultarReposicao" name="Consultar vw_alerta_reposicao após CONSUMO">
+      <bpmn:documentation>Avaliar quantidade_disponivel em relação a ponto_reposicao. Considerar os estados CRITICO, REPOR e NORMAL.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_B_AbaixoReposicao" name="Abaixo do ponto de reposição?" gatewayDirection="Diverging"/>
+    <bpmn:endEvent id="End_B_Normal" name="Fim — nível NORMAL"/>
+    <bpmn:userTask id="Task_B_EmitirPedido" name="Analisar alerta REPOR/CRITICO e emitir pedido com quantidade_reposicao"/>
+    <bpmn:endEvent id="End_B_Pedido" name="Fim — pedido de compra emitido"/>
+    <bpmn:userTask id="Task_C_LerTemperatura" name="Registar leitura de temperatura do local"/>
+    <bpmn:serviceTask id="Task_C_RegistrarTemperatura" name="Registar leitura em registro_temperatura">
+      <bpmn:documentation>Persistir a leitura térmica associada ao local, data/hora e responsável.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_C_Anomalia" name="Temperatura fora da faixa ou lote vencido?" gatewayDirection="Diverging"/>
+    <bpmn:serviceTask id="Task_C_ManterNormal" name="Manter lote/local em operação normal">
+      <bpmn:documentation>Quando não existir desvio térmico nem lote vencido, manter o estado operacional sem registar perda.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_C_ManterNormal" name="Fim — operação normal"/>
+    <bpmn:serviceTask id="Task_C_BloquearLoteInterditarLocal" name="Bloquear lote ou interditar local">
+      <bpmn:documentation>Quando aplicável, alterar o estado do lote para BLOQUEADO ou o estado do local para INTERDITADO.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_C_RegistrarPerda" name="Registar movimentação PERDA e acção de descarte">
+      <bpmn:documentation>Registar a movimentação PERDA e a acção tomada. Para lotes vencidos, PERDA é a única saída permitida; não permitir CONSUMO.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_C_ConsultarReposicao" name="Consultar vw_alerta_reposicao após PERDA">
+      <bpmn:documentation>Reavaliar quantidade_disponivel e ponto_reposicao após o registo da saída PERDA.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_C_AbaixoReposicao" name="Abaixo do ponto de reposição?" gatewayDirection="Diverging"/>
+    <bpmn:endEvent id="End_C_NormalReposicao" name="Fim — nível NORMAL após PERDA"/>
+    <bpmn:userTask id="Task_C_EmitirPedido" name="Analisar alerta REPOR/CRITICO e emitir pedido com quantidade_reposicao"/>
+    <bpmn:endEvent id="End_C_Pedido" name="Fim — pedido de compra emitido"/>
+    <bpmn:userTask id="Task_D_SolicitarEstorno" name="Solicitar estorno de movimentação CONFIRMADA (Estoquista/Gerente) e apresentar justificativa"/>
+    <bpmn:serviceTask id="Task_D_ValidarEstorno" name="Validar movimentação CONFIRMADA, não estornada e saldo reversível">
+      <bpmn:documentation>Verificar se a movimentação original está CONFIRMADA, se ainda não foi estornada e se existe saldo suficiente para efectuar a reversão.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_D_EstornoPermitido" name="Estorno permitido?" gatewayDirection="Diverging"/>
+    <bpmn:serviceTask id="Task_D_RecusarEstorno" name="Rejeitar estorno e informar motivo">
+      <bpmn:documentation>Rejeitar se a movimentação já estiver estornada, não estiver CONFIRMADA ou se o saldo não permitir a reversão.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_D_Recusado" name="Fim — estorno rejeitado"/>
+    <bpmn:userTask id="Task_D_AutorizarEstorno" name="Analisar solicitação e autorizar estorno"/>
+    <bpmn:serviceTask id="Task_D_ExecutarEstorno" name="Executar sp_estornar_movimentacao e criar ESTORNO inverso">
+      <bpmn:documentation>Revalidar as condições transaccionais, criar a movimentação inversa do tipo ESTORNO e marcar a movimentação original como ESTORNADA. Não apagar nem editar os itens confirmados; trg_item_proteger_confirmado preserva o histórico.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_D_ConsultarReposicao" name="Consultar vw_alerta_reposicao após ESTORNO">
+      <bpmn:documentation>Avaliar quantidade_disponivel em relação a ponto_reposicao após a movimentação inversa.</bpmn:documentation>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_D_AbaixoReposicao" name="Abaixo do ponto de reposição?" gatewayDirection="Diverging"/>
+    <bpmn:endEvent id="End_D_NormalReposicao" name="Fim — nível NORMAL após ESTORNO"/>
+    <bpmn:userTask id="Task_D_EmitirPedido" name="Analisar alerta REPOR/CRITICO e emitir pedido com quantidade_reposicao"/>
+    <bpmn:endEvent id="End_D_Pedido" name="Fim — pedido de compra emitido"/>
+    <bpmn:sequenceFlow id="Flow_Start_Tipo" sourceRef="Start_Operacao" targetRef="Gateway_TipoOperacao"/>
+    <bpmn:sequenceFlow id="Flow_Tipo_A" sourceRef="Gateway_TipoOperacao" targetRef="Task_A_Conferir" name="A · RECEPÇÃO / ENTRADA"/>
+    <bpmn:sequenceFlow id="Flow_Tipo_B" sourceRef="Gateway_TipoOperacao" targetRef="Task_B_SolicitarRetirada" name="B · RETIRADA / CONSUMO"/>
+    <bpmn:sequenceFlow id="Flow_Tipo_C" sourceRef="Gateway_TipoOperacao" targetRef="Task_C_LerTemperatura" name="C · MONITORIZAÇÃO / PERDA"/>
+    <bpmn:sequenceFlow id="Flow_Tipo_D" sourceRef="Gateway_TipoOperacao" targetRef="Task_D_SolicitarEstorno" name="D · CORRECÇÃO / ESTORNO"/>
+    <bpmn:sequenceFlow id="Flow_A_Conferir_Validar1" sourceRef="Task_A_Conferir" targetRef="Task_A_ValidarFuncionarioValidade"/>
+    <bpmn:sequenceFlow id="Flow_A_Validar1_Validar2" sourceRef="Task_A_ValidarFuncionarioValidade" targetRef="Task_A_ValidarArmazenamento"/>
+    <bpmn:sequenceFlow id="Flow_A_Validar2_Gateway" sourceRef="Task_A_ValidarArmazenamento" targetRef="Gateway_A_DadosCapacidadeValidos"/>
+    <bpmn:sequenceFlow id="Flow_A_Nao" sourceRef="Gateway_A_DadosCapacidadeValidos" targetRef="Task_A_BloquearNotificar" name="Não"/>
+    <bpmn:sequenceFlow id="Flow_A_Bloquear_Fim" sourceRef="Task_A_BloquearNotificar" targetRef="End_A_Excecao"/>
+    <bpmn:sequenceFlow id="Flow_A_Sim" sourceRef="Gateway_A_DadosCapacidadeValidos" targetRef="Task_A_RegistrarEntrada" name="Sim"/>
+    <bpmn:sequenceFlow id="Flow_A_Entrada_Fim" sourceRef="Task_A_RegistrarEntrada" targetRef="End_A_Sucesso"/>
+    <bpmn:sequenceFlow id="Flow_B_Solicitar_Selecionar" sourceRef="Task_B_SolicitarRetirada" targetRef="Task_B_SelecionarLotes"/>
+    <bpmn:sequenceFlow id="Flow_B_Selecionar_Gateway" sourceRef="Task_B_SelecionarLotes" targetRef="Gateway_B_SaldoSuficiente"/>
+    <bpmn:sequenceFlow id="Flow_B_Nao" sourceRef="Gateway_B_SaldoSuficiente" targetRef="Task_B_BloquearInsuficiencia" name="Não"/>
+    <bpmn:sequenceFlow id="Flow_B_Bloquear_Fim" sourceRef="Task_B_BloquearInsuficiencia" targetRef="End_B_Insuficiente"/>
+    <bpmn:sequenceFlow id="Flow_B_Sim" sourceRef="Gateway_B_SaldoSuficiente" targetRef="Task_B_AbaterConfirmar" name="Sim"/>
+    <bpmn:sequenceFlow id="Flow_B_Abater_Consultar" sourceRef="Task_B_AbaterConfirmar" targetRef="Task_B_ConsultarReposicao"/>
+    <bpmn:sequenceFlow id="Flow_B_Consultar_Gateway" sourceRef="Task_B_ConsultarReposicao" targetRef="Gateway_B_AbaixoReposicao"/>
+    <bpmn:sequenceFlow id="Flow_B_Normal" sourceRef="Gateway_B_AbaixoReposicao" targetRef="End_B_Normal" name="Não · NORMAL"/>
+    <bpmn:sequenceFlow id="Flow_B_Repor" sourceRef="Gateway_B_AbaixoReposicao" targetRef="Task_B_EmitirPedido" name="Sim · REPOR / CRITICO"/>
+    <bpmn:sequenceFlow id="Flow_B_Pedido_Fim" sourceRef="Task_B_EmitirPedido" targetRef="End_B_Pedido"/>
+    <bpmn:sequenceFlow id="Flow_C_Ler_Registrar" sourceRef="Task_C_LerTemperatura" targetRef="Task_C_RegistrarTemperatura"/>
+    <bpmn:sequenceFlow id="Flow_C_Registrar_Gateway" sourceRef="Task_C_RegistrarTemperatura" targetRef="Gateway_C_Anomalia"/>
+    <bpmn:sequenceFlow id="Flow_C_Nao" sourceRef="Gateway_C_Anomalia" targetRef="Task_C_ManterNormal" name="Não"/>
+    <bpmn:sequenceFlow id="Flow_C_Manter_Fim" sourceRef="Task_C_ManterNormal" targetRef="End_C_ManterNormal"/>
+    <bpmn:sequenceFlow id="Flow_C_Sim" sourceRef="Gateway_C_Anomalia" targetRef="Task_C_BloquearLoteInterditarLocal" name="Sim"/>
+    <bpmn:sequenceFlow id="Flow_C_Bloquear_Perda" sourceRef="Task_C_BloquearLoteInterditarLocal" targetRef="Task_C_RegistrarPerda"/>
+    <bpmn:sequenceFlow id="Flow_C_Perda_Consultar" sourceRef="Task_C_RegistrarPerda" targetRef="Task_C_ConsultarReposicao"/>
+    <bpmn:sequenceFlow id="Flow_C_Consultar_Gateway" sourceRef="Task_C_ConsultarReposicao" targetRef="Gateway_C_AbaixoReposicao"/>
+    <bpmn:sequenceFlow id="Flow_C_Normal" sourceRef="Gateway_C_AbaixoReposicao" targetRef="End_C_NormalReposicao" name="Não · NORMAL"/>
+    <bpmn:sequenceFlow id="Flow_C_Repor" sourceRef="Gateway_C_AbaixoReposicao" targetRef="Task_C_EmitirPedido" name="Sim · REPOR / CRITICO"/>
+    <bpmn:sequenceFlow id="Flow_C_Pedido_Fim" sourceRef="Task_C_EmitirPedido" targetRef="End_C_Pedido"/>
+    <bpmn:sequenceFlow id="Flow_D_Solicitar_Validar" sourceRef="Task_D_SolicitarEstorno" targetRef="Task_D_ValidarEstorno"/>
+    <bpmn:sequenceFlow id="Flow_D_Validar_Gateway" sourceRef="Task_D_ValidarEstorno" targetRef="Gateway_D_EstornoPermitido"/>
+    <bpmn:sequenceFlow id="Flow_D_Nao" sourceRef="Gateway_D_EstornoPermitido" targetRef="Task_D_RecusarEstorno" name="Não"/>
+    <bpmn:sequenceFlow id="Flow_D_Recusar_Fim" sourceRef="Task_D_RecusarEstorno" targetRef="End_D_Recusado"/>
+    <bpmn:sequenceFlow id="Flow_D_Sim_Autorizar" sourceRef="Gateway_D_EstornoPermitido" targetRef="Task_D_AutorizarEstorno" name="Sim"/>
+    <bpmn:sequenceFlow id="Flow_D_Autorizar_Executar" sourceRef="Task_D_AutorizarEstorno" targetRef="Task_D_ExecutarEstorno"/>
+    <bpmn:sequenceFlow id="Flow_D_Executar_Consultar" sourceRef="Task_D_ExecutarEstorno" targetRef="Task_D_ConsultarReposicao"/>
+    <bpmn:sequenceFlow id="Flow_D_Consultar_Gateway" sourceRef="Task_D_ConsultarReposicao" targetRef="Gateway_D_AbaixoReposicao"/>
+    <bpmn:sequenceFlow id="Flow_D_Normal" sourceRef="Gateway_D_AbaixoReposicao" targetRef="End_D_NormalReposicao" name="Não · NORMAL"/>
+    <bpmn:sequenceFlow id="Flow_D_Repor" sourceRef="Gateway_D_AbaixoReposicao" targetRef="Task_D_EmitirPedido" name="Sim · REPOR / CRITICO"/>
+    <bpmn:sequenceFlow id="Flow_D_Pedido_Fim" sourceRef="Task_D_EmitirPedido" targetRef="End_D_Pedido"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Estoque">
+    <bpmndi:BPMNPlane id="BPMNPlane_Estoque" bpmnElement="Collaboration_Estoque">
+      <bpmndi:BPMNShape id="Shape_Participant_Deposito" bpmnElement="Participant_Deposito" isHorizontal="false">
+        <dc:Bounds x="50" y="50" width="2200" height="1850"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Estoquista" bpmnElement="Lane_Estoquista" isHorizontal="false">
+        <dc:Bounds x="50" y="50" width="650" height="1850"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Sistema" bpmnElement="Lane_Sistema" isHorizontal="false">
+        <dc:Bounds x="700" y="50" width="1000" height="1850"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Gerencia" bpmnElement="Lane_Gerencia" isHorizontal="false">
+        <dc:Bounds x="1700" y="50" width="550" height="1850"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Start_Operacao" bpmnElement="Start_Operacao">
+        <dc:Bounds x="110" y="110" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_TipoOperacao" bpmnElement="Gateway_TipoOperacao">
+        <dc:Bounds x="290" y="103" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_A_Conferir" bpmnElement="Task_A_Conferir">
+        <dc:Bounds x="440" y="230" width="190" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_A_ValidarFuncionarioValidade" bpmnElement="Task_A_ValidarFuncionarioValidade">
+        <dc:Bounds x="760" y="230" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_A_ValidarArmazenamento" bpmnElement="Task_A_ValidarArmazenamento">
+        <dc:Bounds x="1010" y="230" width="220" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_A_DadosCapacidadeValidos" bpmnElement="Gateway_A_DadosCapacidadeValidos">
+        <dc:Bounds x="1290" y="255" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_A_BloquearNotificar" bpmnElement="Task_A_BloquearNotificar">
+        <dc:Bounds x="1380" y="140" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_A_Excecao" bpmnElement="End_A_Excecao">
+        <dc:Bounds x="1630" y="167" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_A_RegistrarEntrada" bpmnElement="Task_A_RegistrarEntrada">
+        <dc:Bounds x="1380" y="355" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_A_Sucesso" bpmnElement="End_A_Sucesso">
+        <dc:Bounds x="1630" y="382" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_B_SolicitarRetirada" bpmnElement="Task_B_SolicitarRetirada">
+        <dc:Bounds x="440" y="640" width="190" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_B_SelecionarLotes" bpmnElement="Task_B_SelecionarLotes">
+        <dc:Bounds x="760" y="640" width="220" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_B_SaldoSuficiente" bpmnElement="Gateway_B_SaldoSuficiente">
+        <dc:Bounds x="1030" y="665" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_B_BloquearInsuficiencia" bpmnElement="Task_B_BloquearInsuficiencia">
+        <dc:Bounds x="1160" y="560" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_B_Insuficiente" bpmnElement="End_B_Insuficiente">
+        <dc:Bounds x="1400" y="587" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_B_AbaterConfirmar" bpmnElement="Task_B_AbaterConfirmar">
+        <dc:Bounds x="1160" y="740" width="210" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_B_ConsultarReposicao" bpmnElement="Task_B_ConsultarReposicao">
+        <dc:Bounds x="1400" y="740" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_B_AbaixoReposicao" bpmnElement="Gateway_B_AbaixoReposicao">
+        <dc:Bounds x="1630" y="760" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_B_Normal" bpmnElement="End_B_Normal">
+        <dc:Bounds x="1635" y="870" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_B_EmitirPedido" bpmnElement="Task_B_EmitirPedido">
+        <dc:Bounds x="1790" y="700" width="230" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_B_Pedido" bpmnElement="End_B_Pedido">
+        <dc:Bounds x="2070" y="732" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_C_LerTemperatura" bpmnElement="Task_C_LerTemperatura">
+        <dc:Bounds x="440" y="1060" width="190" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_C_RegistrarTemperatura" bpmnElement="Task_C_RegistrarTemperatura">
+        <dc:Bounds x="760" y="1060" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_C_Anomalia" bpmnElement="Gateway_C_Anomalia">
+        <dc:Bounds x="1030" y="1080" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_C_ManterNormal" bpmnElement="Task_C_ManterNormal">
+        <dc:Bounds x="1160" y="1200" width="200" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_C_ManterNormal" bpmnElement="End_C_ManterNormal">
+        <dc:Bounds x="1400" y="1222" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_C_BloquearLoteInterditarLocal" bpmnElement="Task_C_BloquearLoteInterditarLocal">
+        <dc:Bounds x="1160" y="960" width="220" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_C_RegistrarPerda" bpmnElement="Task_C_RegistrarPerda">
+        <dc:Bounds x="1400" y="960" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_C_ConsultarReposicao" bpmnElement="Task_C_ConsultarReposicao">
+        <dc:Bounds x="1400" y="1090" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_C_AbaixoReposicao" bpmnElement="Gateway_C_AbaixoReposicao">
+        <dc:Bounds x="1630" y="1110" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_C_NormalReposicao" bpmnElement="End_C_NormalReposicao">
+        <dc:Bounds x="1635" y="1235" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_C_EmitirPedido" bpmnElement="Task_C_EmitirPedido">
+        <dc:Bounds x="1790" y="1070" width="230" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_C_Pedido" bpmnElement="End_C_Pedido">
+        <dc:Bounds x="2070" y="1102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_D_SolicitarEstorno" bpmnElement="Task_D_SolicitarEstorno">
+        <dc:Bounds x="440" y="1480" width="190" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_D_ValidarEstorno" bpmnElement="Task_D_ValidarEstorno">
+        <dc:Bounds x="760" y="1480" width="220" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_D_EstornoPermitido" bpmnElement="Gateway_D_EstornoPermitido">
+        <dc:Bounds x="1040" y="1505" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_D_RecusarEstorno" bpmnElement="Task_D_RecusarEstorno">
+        <dc:Bounds x="1160" y="1380" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_D_Recusado" bpmnElement="End_D_Recusado">
+        <dc:Bounds x="1400" y="1407" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_D_AutorizarEstorno" bpmnElement="Task_D_AutorizarEstorno">
+        <dc:Bounds x="1790" y="1480" width="230" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_D_ExecutarEstorno" bpmnElement="Task_D_ExecutarEstorno">
+        <dc:Bounds x="1160" y="1660" width="210" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_D_ConsultarReposicao" bpmnElement="Task_D_ConsultarReposicao">
+        <dc:Bounds x="1400" y="1660" width="200" height="90"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_D_AbaixoReposicao" bpmnElement="Gateway_D_AbaixoReposicao">
+        <dc:Bounds x="1630" y="1680" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_D_NormalReposicao" bpmnElement="End_D_NormalReposicao">
+        <dc:Bounds x="1635" y="1810" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_D_EmitirPedido" bpmnElement="Task_D_EmitirPedido">
+        <dc:Bounds x="1790" y="1690" width="230" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_D_Pedido" bpmnElement="End_D_Pedido">
+        <dc:Bounds x="2070" y="1722" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Flow_Start_Tipo" bpmnElement="Flow_Start_Tipo">
+        <di:waypoint x="146" y="128"/>
+        <di:waypoint x="290" y="128"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Tipo_A" bpmnElement="Flow_Tipo_A">
+        <di:waypoint x="340" y="128"/>
+        <di:waypoint x="360" y="128"/>
+        <di:waypoint x="360" y="275"/>
+        <di:waypoint x="440" y="275"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Tipo_B" bpmnElement="Flow_Tipo_B">
+        <di:waypoint x="340" y="128"/>
+        <di:waypoint x="380" y="128"/>
+        <di:waypoint x="380" y="685"/>
+        <di:waypoint x="440" y="685"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Tipo_C" bpmnElement="Flow_Tipo_C">
+        <di:waypoint x="340" y="128"/>
+        <di:waypoint x="400" y="128"/>
+        <di:waypoint x="400" y="1105"/>
+        <di:waypoint x="440" y="1105"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Tipo_D" bpmnElement="Flow_Tipo_D">
+        <di:waypoint x="340" y="128"/>
+        <di:waypoint x="420" y="128"/>
+        <di:waypoint x="420" y="1525"/>
+        <di:waypoint x="440" y="1525"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_A_Conferir_Validar1" bpmnElement="Flow_A_Conferir_Validar1">
+        <di:waypoint x="630" y="275"/>
+        <di:waypoint x="760" y="275"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_A_Validar1_Validar2" bpmnElement="Flow_A_Validar1_Validar2">
+        <di:waypoint x="960" y="275"/>
+        <di:waypoint x="1010" y="280"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_A_Validar2_Gateway" bpmnElement="Flow_A_Validar2_Gateway">
+        <di:waypoint x="1230" y="280"/>
+        <di:waypoint x="1290" y="280"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_A_Nao" bpmnElement="Flow_A_Nao">
+        <di:waypoint x="1340" y="280"/>
+        <di:waypoint x="1360" y="280"/>
+        <di:waypoint x="1360" y="185"/>
+        <di:waypoint x="1380" y="185"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_A_Bloquear_Fim" bpmnElement="Flow_A_Bloquear_Fim">
+        <di:waypoint x="1580" y="185"/>
+        <di:waypoint x="1630" y="185"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_A_Sim" bpmnElement="Flow_A_Sim">
+        <di:waypoint x="1315" y="305"/>
+        <di:waypoint x="1350" y="305"/>
+        <di:waypoint x="1350" y="400"/>
+        <di:waypoint x="1380" y="400"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_A_Entrada_Fim" bpmnElement="Flow_A_Entrada_Fim">
+        <di:waypoint x="1580" y="400"/>
+        <di:waypoint x="1630" y="400"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Solicitar_Selecionar" bpmnElement="Flow_B_Solicitar_Selecionar">
+        <di:waypoint x="630" y="685"/>
+        <di:waypoint x="760" y="690"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Selecionar_Gateway" bpmnElement="Flow_B_Selecionar_Gateway">
+        <di:waypoint x="980" y="690"/>
+        <di:waypoint x="1030" y="690"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Nao" bpmnElement="Flow_B_Nao">
+        <di:waypoint x="1080" y="690"/>
+        <di:waypoint x="1110" y="690"/>
+        <di:waypoint x="1110" y="605"/>
+        <di:waypoint x="1160" y="605"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Bloquear_Fim" bpmnElement="Flow_B_Bloquear_Fim">
+        <di:waypoint x="1360" y="605"/>
+        <di:waypoint x="1400" y="605"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Sim" bpmnElement="Flow_B_Sim">
+        <di:waypoint x="1055" y="715"/>
+        <di:waypoint x="1110" y="715"/>
+        <di:waypoint x="1110" y="790"/>
+        <di:waypoint x="1160" y="790"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Abater_Consultar" bpmnElement="Flow_B_Abater_Consultar">
+        <di:waypoint x="1370" y="790"/>
+        <di:waypoint x="1400" y="785"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Consultar_Gateway" bpmnElement="Flow_B_Consultar_Gateway">
+        <di:waypoint x="1600" y="785"/>
+        <di:waypoint x="1630" y="785"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Normal" bpmnElement="Flow_B_Normal">
+        <di:waypoint x="1655" y="810"/>
+        <di:waypoint x="1655" y="870"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Repor" bpmnElement="Flow_B_Repor">
+        <di:waypoint x="1680" y="785"/>
+        <di:waypoint x="1735" y="785"/>
+        <di:waypoint x="1735" y="750"/>
+        <di:waypoint x="1790" y="750"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_B_Pedido_Fim" bpmnElement="Flow_B_Pedido_Fim">
+        <di:waypoint x="2020" y="750"/>
+        <di:waypoint x="2070" y="750"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Ler_Registrar" bpmnElement="Flow_C_Ler_Registrar">
+        <di:waypoint x="630" y="1105"/>
+        <di:waypoint x="760" y="1105"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Registrar_Gateway" bpmnElement="Flow_C_Registrar_Gateway">
+        <di:waypoint x="960" y="1105"/>
+        <di:waypoint x="1030" y="1105"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Nao" bpmnElement="Flow_C_Nao">
+        <di:waypoint x="1080" y="1105"/>
+        <di:waypoint x="1110" y="1105"/>
+        <di:waypoint x="1110" y="1240"/>
+        <di:waypoint x="1160" y="1240"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Manter_Fim" bpmnElement="Flow_C_Manter_Fim">
+        <di:waypoint x="1360" y="1240"/>
+        <di:waypoint x="1400" y="1240"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Sim" bpmnElement="Flow_C_Sim">
+        <di:waypoint x="1080" y="1105"/>
+        <di:waypoint x="1110" y="1105"/>
+        <di:waypoint x="1110" y="1005"/>
+        <di:waypoint x="1160" y="1005"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Bloquear_Perda" bpmnElement="Flow_C_Bloquear_Perda">
+        <di:waypoint x="1380" y="1005"/>
+        <di:waypoint x="1400" y="1005"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Perda_Consultar" bpmnElement="Flow_C_Perda_Consultar">
+        <di:waypoint x="1500" y="1050"/>
+        <di:waypoint x="1500" y="1090"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Consultar_Gateway" bpmnElement="Flow_C_Consultar_Gateway">
+        <di:waypoint x="1600" y="1135"/>
+        <di:waypoint x="1630" y="1135"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Normal" bpmnElement="Flow_C_Normal">
+        <di:waypoint x="1655" y="1160"/>
+        <di:waypoint x="1655" y="1240"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Repor" bpmnElement="Flow_C_Repor">
+        <di:waypoint x="1680" y="1135"/>
+        <di:waypoint x="1735" y="1135"/>
+        <di:waypoint x="1735" y="1120"/>
+        <di:waypoint x="1790" y="1120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_C_Pedido_Fim" bpmnElement="Flow_C_Pedido_Fim">
+        <di:waypoint x="2020" y="1120"/>
+        <di:waypoint x="2070" y="1120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Solicitar_Validar" bpmnElement="Flow_D_Solicitar_Validar">
+        <di:waypoint x="630" y="1525"/>
+        <di:waypoint x="760" y="1530"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Validar_Gateway" bpmnElement="Flow_D_Validar_Gateway">
+        <di:waypoint x="980" y="1530"/>
+        <di:waypoint x="1040" y="1530"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Nao" bpmnElement="Flow_D_Nao">
+        <di:waypoint x="1090" y="1530"/>
+        <di:waypoint x="1120" y="1530"/>
+        <di:waypoint x="1120" y="1425"/>
+        <di:waypoint x="1160" y="1425"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Recusar_Fim" bpmnElement="Flow_D_Recusar_Fim">
+        <di:waypoint x="1360" y="1425"/>
+        <di:waypoint x="1400" y="1425"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Sim_Autorizar" bpmnElement="Flow_D_Sim_Autorizar">
+        <di:waypoint x="1090" y="1530"/>
+        <di:waypoint x="1500" y="1530"/>
+        <di:waypoint x="1790" y="1530"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Autorizar_Executar" bpmnElement="Flow_D_Autorizar_Executar">
+        <di:waypoint x="2020" y="1530"/>
+        <di:waypoint x="2100" y="1530"/>
+        <di:waypoint x="2140" y="1530"/>
+        <di:waypoint x="2140" y="1870"/>
+        <di:waypoint x="1120" y="1870"/>
+        <di:waypoint x="1120" y="1710"/>
+        <di:waypoint x="1160" y="1710"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Executar_Consultar" bpmnElement="Flow_D_Executar_Consultar">
+        <di:waypoint x="1370" y="1710"/>
+        <di:waypoint x="1400" y="1705"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Consultar_Gateway" bpmnElement="Flow_D_Consultar_Gateway">
+        <di:waypoint x="1600" y="1705"/>
+        <di:waypoint x="1630" y="1705"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Normal" bpmnElement="Flow_D_Normal">
+        <di:waypoint x="1655" y="1730"/>
+        <di:waypoint x="1655" y="1810"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Repor" bpmnElement="Flow_D_Repor">
+        <di:waypoint x="1680" y="1705"/>
+        <di:waypoint x="1735" y="1705"/>
+        <di:waypoint x="1735" y="1740"/>
+        <di:waypoint x="1790" y="1740"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Pedido_Fim" bpmnElement="Flow_D_Pedido_Fim">
+        <di:waypoint x="2020" y="1740"/>
+        <di:waypoint x="2070" y="1740"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
